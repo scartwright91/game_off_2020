@@ -3,12 +3,21 @@ import json
 import pygame as pg
 from .settings import *
 from .utils import read_image
+from .enemies import Droid
+
+
+def find_player_pos():
+
+    for layer in level_data["levels"][0]["layerInstances"]:
+        if layer["__identifier"] == "Entities":
+            for entity in layer["entityInstances"]:
+                if entity["__identifier"] == "Player":
+                    player_pos = [entity["px"][0] * TILE_SCALE, entity["px"][1] * TILE_SCALE]
+
+    return player_pos
+
 
 def create_level(game):
-
-    # read level
-    with open("levels/level.json") as f:
-        level_data = json.load(f)
 
     # read tileset
     tileset = read_image("levels/basic_earth.png")
@@ -16,17 +25,24 @@ def create_level(game):
 
     # iterate through layers
     for layer in level_data["levels"][0]["layerInstances"]:
+
+        # Platforms
         if layer["__identifier"] == "Platforms":
             for tile in layer["autoLayerTiles"]:
-                Tile(tile, tileset, game.platforms)
-
-
+                Tile(tile, tileset, game.platforms, game.camera)
+        
+        # Entities
+        if layer["__identifier"] == "Entities":
+            for entity in layer["entityInstances"]:
+                if entity["__identifier"] == "Droid":
+                    pos = [entity["px"][0] * TILE_SCALE, entity["px"][1] * TILE_SCALE]
+                    Droid(pos, game, game.enemies, game.camera)
 
 
 class Tile(pg.sprite.Sprite):
 
-    def __init__(self, tile_meta, tileset, group):
-        super().__init__(group)
+    def __init__(self, tile_meta, tileset, *groups):
+        super().__init__(*groups)
         self.tile_meta = tile_meta
         self.tileset = tileset
         self.pos = [self.tile_meta["px"][0] * TILE_SCALE, self.tile_meta["px"][1] * TILE_SCALE]

@@ -1,7 +1,9 @@
 
 import pygame as pg
 import sys
-from .level_parser import create_level
+from .level_parser import create_level, find_player_pos
+from .player import Player
+from .camera import CameraAwareLayeredUpdates
 
 
 class Game:
@@ -13,8 +15,12 @@ class Game:
 
         # Create sprite groups
         self.platforms = pg.sprite.Group()
+        self.enemies = pg.sprite.Group()
 
-        # Create level
+        # Create player, camera and level
+        pos = find_player_pos()
+        self.player = Player(pos, self)
+        self.camera = CameraAwareLayeredUpdates(self.player, self.screen_size)
         create_level(self)
 
     def run(self):
@@ -40,11 +46,12 @@ class Game:
                     self.playing = False
 
     def update(self):
-        pass
+        self.camera.update()
 
     def draw(self):
-        self.screen.fill((255, 255, 255))
-        for p in self.platforms:
-            p.draw(self.screen)
+        self.screen.fill((0, 0, 0))
+        self.camera.draw(self.screen, self.platforms)
+        self.camera.draw(self.screen, self.enemies)
+        self.player.draw(self.screen, self.camera.cam)
         pg.display.flip()
 
