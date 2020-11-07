@@ -11,7 +11,7 @@
 	"defaultPivotY": 0,
 	"defaultGridSize": 16,
 	"bgColor": "#7F8093",
-	"nextUid": 37,
+	"nextUid": 40,
 	"minifyJson": false,
 	"exportTiled": false,
 	"defs": {
@@ -463,7 +463,7 @@
 				"identifier": "Player",
 				"uid": 21,
 				"width": 16,
-				"height": 16,
+				"height": 32,
 				"color": "#4CBD7F",
 				"renderMode": "Rectangle",
 				"showName": true,
@@ -480,7 +480,7 @@
 				"identifier": "Droid",
 				"uid": 36,
 				"width": 16,
-				"height": 16,
+				"height": 32,
 				"color": "#E90707",
 				"renderMode": "Rectangle",
 				"showName": true,
@@ -491,7 +491,24 @@
 				"limitBehavior": "DiscardOldOnes",
 				"pivotX": 0,
 				"pivotY": 0,
-				"fieldDefs": []
+				"fieldDefs": [
+					{
+						"identifier": "Patrol",
+						"__type": "Array<Point>",
+						"uid": 39,
+						"type": "F_Point",
+						"isArray": true,
+						"canBeNull": false,
+						"arrayMinLength": null,
+						"arrayMaxLength": null,
+						"editorDisplayMode": "PointPath",
+						"editorDisplayPos": "Above",
+						"editorAlwaysShow": false,
+						"min": null,
+						"max": null,
+						"defaultOverride": null
+					}
+				]
 			}
 		],
 		"tilesets": [
@@ -566,8 +583,20 @@
 				"seed": 1215811,
 				"gridTiles": [],
 				"entityInstances": [
-					{ "__identifier": "Player", "__grid": [4,5], "__tile": null, "defUid": 21, "px": [64,80], "fieldInstances": [] },
-					{ "__identifier": "Droid", "__grid": [32,5], "__tile": null, "defUid": 36, "px": [512,80], "fieldInstances": [] }
+					{ "__identifier": "Droid", "__grid": [30,5], "__tile": null, "defUid": 36, "px": [480,80], "fieldInstances": [{
+						"__identifier": "Patrol",
+						"__value": [ { "cx": 23, "cy": 5 }, { "cx": 34, "cy": 5 } ],
+						"__type": "Array<Point>",
+						"defUid": 39,
+						"realEditorValues": [ {
+							"id": "V_String",
+							"params": ["23,5"]
+						}, {
+							"id": "V_String",
+							"params": ["34,5"]
+						} ]
+					}] },
+					{ "__identifier": "Player", "__grid": [5,5], "__tile": null, "defUid": 21, "px": [80,80], "fieldInstances": [] }
 				]
 			},
 			{
@@ -603,6 +632,7 @@
 					{ "coordId": 142, "v": 0 },
 					{ "coordId": 145, "v": 0 },
 					{ "coordId": 146, "v": 0 },
+					{ "coordId": 176, "v": 0 },
 					{ "coordId": 268, "v": 0 },
 					{ "coordId": 269, "v": 0 },
 					{ "coordId": 270, "v": 0 },
@@ -693,6 +723,7 @@
 					{ "coordId": 365, "v": 0 }
 				],
 				"autoLayerTiles": [
+					{ "px": [384,64], "src": [48,48], "f": 0, "d": [4,176,27] },
 					{ "px": [192,32], "src": [32,48], "f": 0, "d": [5,88,26] },
 					{ "px": [336,32], "src": [32,48], "f": 0, "d": [5,97,26] },
 					{ "px": [176,32], "src": [16,48], "f": 0, "d": [6,87,25] },

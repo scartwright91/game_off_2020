@@ -17,7 +17,7 @@ class CameraAwareLayeredUpdates(pg.sprite.LayeredUpdates):
         if self.target:
             x = -self.target.rect.center[0] + self.screen_size[0]/2
             y = -self.target.rect.center[1] + self.screen_size[1]/2
-            self.cam += (pg.Vector2((x, y)) - self.cam) * 0.15
+            self.cam += (pg.Vector2((x, y)) - self.cam)# * 0.15
 
     def draw(self, surface, spritegroup):
         spritedict = self.spritedict
@@ -29,9 +29,6 @@ class CameraAwareLayeredUpdates(pg.sprite.LayeredUpdates):
             rec = spritedict[spr]
             draw_pos = spr.rect.move(self.cam)
             newrect = surface.blit(spr.image, draw_pos)
-            # # If sprite has additional draw method
-            # if hasattr(spr, 'draw'):
-            #     spr.draw(surface, draw_pos)
             if rec is init_rect:
                 dirty_append(newrect)
             else:

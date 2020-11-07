@@ -1,22 +1,44 @@
 
 
 import pygame as pg
+import math
 from .settings import *
+
+
+
+class DeflectMove(pg.sprite.Sprite):
+
+    def __init__(self, mouse_pos, player_pos):
+        self.mouse_pos = mouse_pos
+        self.player_pos = player_pos
+
+    def update(self):
+        self.x_delta = (self.mouse_pos[0] - self.player_pos[0])
+        self.y_delta = -(self.mouse_pos[1] - self.player_pos[1])
+        self.theta = math.atan2(self.y_delta, self.x_delta) + math.pi/2
+        self.shield = pg.Vector2(
+            100 * math.sin(self.theta),
+            100 * math.cos(self.theta)
+        )
+
 
 
 class Player(pg.sprite.Sprite):
 
     def __init__(self, pos, game):
         super().__init__()
-        self.image = pg.Surface((TILE_SIZE * TILE_SCALE, TILE_SIZE * TILE_SCALE))
+        self.image = pg.Surface((TILE_SIZE * TILE_SCALE, 2 * TILE_SIZE * TILE_SCALE))
         self.image.fill(BLUE)
         self.rect = self.image.get_rect(topleft=pos)
         self.game = game
         self.grounded = False
         self.facing_right = True
+        self.shielding = False
         self.speed = 8
         self.jump = 20
         self.vel = pg.Vector2(0, 0)
+
+        # shield deflect
 
     def update(self):
         
@@ -25,6 +47,12 @@ class Player(pg.sprite.Sprite):
         jump = pressed[pg.K_w]
         left = pressed[pg.K_a]
         right = pressed[pg.K_d]
+        shield = pressed[pg.K_SPACE]
+
+        if shield:
+            self.shielding = True
+        else:
+            self.shielding = False
 
         if jump and self.grounded:
             self.vel.y = -self.jump
@@ -70,5 +98,59 @@ class Player(pg.sprite.Sprite):
                 if yvel < 0:
                     self.rect.top = p.rect.bottom
 
+    def shield_deflect(self, screen):
+
+        mouse_pos = pg.mouse.get_pos()
+        center_pos = [screen.get_width()/2, screen.get_height()/2]
+
+        x_delta = (mouse_pos[0] - center_pos[0])
+        y_delta = (center_pos[1] - mouse_pos[1])
+        theta = math.atan2(y_delta, x_delta) + math.pi/2
+        theta_orthog = theta + math.pi/2
+
+        shield_center = {
+            "lower": pg.Vector2(
+                center_pos[0] + 95 * math.sin(theta),
+                center_pos[1] + 95 * math.cos(theta)
+            ),
+            "upper": pg.Vector2(
+                center_pos[0] + 105 * math.sin(theta),
+                center_pos[1] + 105 * math.cos(theta)
+            )
+        }
+
+        shield_lower = {
+            "lower": pg.Vector2(
+                shield_center["lower"][0] - 50 * math.sin(theta_orthog),
+                shield_center["lower"][1] - 50 * math.cos(theta_orthog)
+            ),
+            "upper": pg.Vector2(
+                shield_center["upper"][0] - 50 * math.sin(theta_orthog),
+                shield_center["upper"][1] - 50 * math.cos(theta_orthog)
+            )
+        }
+        shield_upper = {
+            "lower": pg.Vector2(
+                shield_center["lower"][0] + 50 * math.sin(theta_orthog),
+                shield_center["lower"][1] + 50 * math.cos(theta_orthog)
+            ),
+            "upper": pg.Vector2(
+                shield_center["upper"][0] + 50 * math.sin(theta_orthog),
+                shield_center["upper"][1] + 50 * math.cos(theta_orthog)
+            )
+        }
+
+        self.shield_poly = [
+            shield_lower["lower"],
+            shield_lower["upper"],
+            shield_upper["upper"],
+            shield_upper["lower"]
+        ]
+
+
     def draw(self, screen, camera):
         screen.blit(self.image, (self.rect.x + camera.x, self.rect.y + camera.y))
+        if self.shielding:
+            # Calculate shield position
+            self.shield_deflect(screen)
+            pg.draw.polygon(screen, BLUE, self.shield_poly)

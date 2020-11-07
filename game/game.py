@@ -16,6 +16,7 @@ class Game:
         # Create sprite groups
         self.platforms = pg.sprite.Group()
         self.enemies = pg.sprite.Group()
+        self.projectiles = pg.sprite.Group()
 
         # Create player, camera and level
         pos = find_player_pos()
@@ -52,6 +53,7 @@ class Game:
         self.screen.fill((0, 0, 0))
         self.camera.draw(self.screen, self.platforms)
         self.camera.draw(self.screen, self.enemies)
+        self.camera.draw(self.screen, self.projectiles)
         self.player.draw(self.screen, self.camera.cam)
         pg.display.flip()
 

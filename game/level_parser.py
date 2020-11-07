@@ -35,8 +35,8 @@ def create_level(game):
         if layer["__identifier"] == "Entities":
             for entity in layer["entityInstances"]:
                 if entity["__identifier"] == "Droid":
-                    pos = [entity["px"][0] * TILE_SCALE, entity["px"][1] * TILE_SCALE]
-                    Droid(pos, game, game.enemies, game.camera)
+                    patrol = [pg.Vector2(patrol["cx"] * TILE_SIZE * TILE_SCALE, patrol["cy"] * TILE_SIZE * TILE_SCALE) for patrol in entity["fieldInstances"][0]["__value"].copy()]
+                    Droid(entity["px"], patrol, game, game.enemies, game.camera)
 
 
 class Tile(pg.sprite.Sprite):
