@@ -1,24 +1,27 @@
 import pygame as pg
 import math
+from shapely.geometry import Polygon
 from .settings import *
 
 
 
 class RangeAttack(pg.sprite.Sprite):
-    def __init__(self, pos, player, screen, platforms, *groups):
-        super().__init__(*groups)
+    def __init__(self, pos, player, screen, platforms, game):
+        super().__init__(game.projectiles, game.camera)
         self.pos = [pos[0], pos[1]]
         self.player = player
         self.screen = screen
         self.platforms = platforms
+        self.camera = game.camera
         self.player_pos = player.rect.center
-        self.image = pg.Surface((TILE_SIZE * TILE_SCALE, 0.25 * TILE_SIZE * TILE_SCALE))
+        self.image = pg.Surface((30, 30), pg.SRCALPHA)
         self.image.fill(YELLOW)
         self.rect = self.image.get_rect(midtop=pos)
-        self.speed = 12
+        self.speed = 8
         self.x_delta = (self.player_pos[0] - self.pos[0])
         self.y_delta = -(self.player_pos[1] - self.pos[1])
         self.theta = math.atan2(self.y_delta, self.x_delta) + math.pi/2
+        self.theta_change = False
         self.x = self.pos[0]
         self.y = self.pos[1]
 
@@ -39,7 +42,24 @@ class RangeAttack(pg.sprite.Sprite):
         self.x += x_increment
         self.y += y_increment
 
-        self.rect.topleft = (self.x, self.y)
+        self.rect.topleft = pg.Vector2(self.x, self.y)
+
+        self.poly = Polygon([
+            (self.rect.topleft[0]+ self.camera.cam.x, self.rect.topleft[1] + self.camera.cam.y),
+            (self.rect.topright[0]+ self.camera.cam.x, self.rect.topright[1] + self.camera.cam.y),
+            (self.rect.bottomright[0] + self.camera.cam.x, self.rect.bottomright[1] + self.camera.cam.y),
+            (self.rect.bottomleft[0] + self.camera.cam.x, self.rect.bottomleft[1] + self.camera.cam.y),
+        ])
+
+        # If projectile collides with player's deflective shield, change
+        # the angle of the projectile
+        if self.player.poly is not None and not self.theta_change:
+            if self.poly.intersects(self.player.poly):
+                self.theta_change = True
+                theta_delta = 2*self.player.theta_orthog - self.theta
+                self.theta = theta_delta
+                
+                #self.kill()
 
         # Write collision method (projectile is removed on collision)
         if pg.sprite.collide_rect(self, self.player):
@@ -47,6 +67,7 @@ class RangeAttack(pg.sprite.Sprite):
         for p in self.platforms:
             if pg.sprite.collide_rect(self, p):
                 self.kill()
+
 
 
 class Droid(pg.sprite.Sprite):
@@ -91,7 +112,7 @@ class Droid(pg.sprite.Sprite):
                     self.patrol_timer = pg.time.get_ticks()
 
         # Attacking
-        if self.attacking and (pg.time.get_ticks() - self.attacking_timer > 800):
+        if self.attacking and (pg.time.get_ticks() - self.attacking_timer > 1500):
             self.attacking_timer = pg.time.get_ticks()
             self.attack()
 
@@ -100,5 +121,5 @@ class Droid(pg.sprite.Sprite):
                     self.player,
                     self.game.screen,
                     self.platforms,
-                    self.game.projectiles, self.game.camera)
+                    self.game)
 

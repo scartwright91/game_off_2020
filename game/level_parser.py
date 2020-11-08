@@ -56,6 +56,3 @@ class Tile(pg.sprite.Sprite):
     def update(self):
         pass
 
-    def draw(self, screen):
-        screen.blit(self.image, self.rect)
-

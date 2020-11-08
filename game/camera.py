@@ -29,6 +29,8 @@ class CameraAwareLayeredUpdates(pg.sprite.LayeredUpdates):
             rec = spritedict[spr]
             draw_pos = spr.rect.move(self.cam)
             newrect = surface.blit(spr.image, draw_pos)
+            if hasattr(spr, "draw"):
+                spr.draw(surface)
             if rec is init_rect:
                 dirty_append(newrect)
             else:
