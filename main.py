@@ -15,7 +15,7 @@ def main():
     pg.init()
     pg.mixer.init()
     #screen = pg.display.set_mode((0, 0), pg.FULLSCREEN)
-    screen = pg.display.set_mode((1200, 800))
+    screen = pg.display.set_mode((1200, 800), pg.SRCALPHA)
     clock = pg.time.Clock()
 
     start_menu = StartMenu(screen, clock)

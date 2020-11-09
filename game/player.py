@@ -1,7 +1,9 @@
 import pygame as pg
 import math
+import os
 from shapely.geometry import Polygon
 from .settings import *
+from .utils import *
 
 
 
@@ -26,44 +28,47 @@ class Player(pg.sprite.Sprite):
 
     def __init__(self, pos, game):
         super().__init__()
-        self.image = pg.Surface((TILE_SIZE * TILE_SCALE, 2 * TILE_SIZE * TILE_SCALE))
-        self.image.fill(BLUE)
+        self.image = pg.Surface((TILE_SIZE * TILE_SCALE, 2 * TILE_SIZE * TILE_SCALE), pg.SRCALPHA)
         self.rect = self.image.get_rect(topleft=pos)
         self.game = game
         self.grounded = False
+        self.jump_active = True
+        self.double_jump_active = True
         self.facing_right = True
         self.shielding = False
         self.speed = 6
-        self.jump = 20
+        self.jump_val = 20
+        self.jump_timer = pg.time.get_ticks()
         self.vel = pg.Vector2(0, 0)
 
         # shield deflect
-        self.shield_mask = None
         self.poly = None
 
+        # Animations
+        self.animation_images = self.load_animations()
+        self.last_update = pg.time.get_ticks()
+        self.current_frame = 0
+        self.image.blit(self.animation_images["standing"]["right"][self.current_frame], (0, 0))
+
     def update(self):
+
+        self.animate()
         
         pressed = pg.key.get_pressed()
 
-        jump = pressed[pg.K_w]
+        jump = pressed[pg.K_SPACE]
         left = pressed[pg.K_a]
         right = pressed[pg.K_d]
-        shield = pressed[pg.K_SPACE]
 
-        if shield:
-            self.shielding = True
-        else:
-            self.shielding = False
-            self.shield_mask = None
-            self.poly = None
+        if jump and (pg.time.get_ticks() - self.jump_timer > 300): self.jump()
 
-        if jump and self.grounded:
-            self.vel.y = -self.jump
-            self.grounded = False
+        # Movement logic
         if left:
+            self.image = self.animation_images['standing']["left"][self.current_frame]
             self.facing_right = False
             self.vel.x = -self.speed
         if right:
+            self.image = self.animation_images['standing']["right"][self.current_frame]
             self.facing_right = True
             self.vel.x = self.speed
         if not(left or right):
@@ -87,6 +92,16 @@ class Player(pg.sprite.Sprite):
         self.grounded = False
         self.collide(0, self.vel.y)
 
+    def jump(self):
+        self.jump_timer = pg.time.get_ticks()
+        # jump and double jump logic
+        if self.jump_active:
+            self.vel.y -= self.jump_val
+            self.jump_active = False
+        elif self.double_jump_active:
+            self.vel.y = -self.jump_val
+            self.double_jump_active = False
+
     def collide(self, xvel, yvel):
         for p in self.game.platforms:
             if pg.sprite.collide_rect(self, p):
@@ -98,6 +113,8 @@ class Player(pg.sprite.Sprite):
                     self.rect.bottom = p.rect.top
                     self.vel.y = 0
                     self.grounded = True
+                    self.jump_active = True
+                    self.double_jump_active = True
                 if yvel < 0:
                     self.rect.top = p.rect.bottom
 
@@ -160,11 +177,48 @@ class Player(pg.sprite.Sprite):
         # Extract mask
         self.shield_mask = pg.mask.from_surface(shield_surface)
 
+    def load_animations(self):
+
+        standing_animations = {
+            "left": [],
+            "right": []
+        }
+        img_dir = "assets/animations/player/standing/"
+        for img_path in os.listdir(img_dir):
+            img = read_image(img_dir + img_path,
+                             w=TILE_SIZE*TILE_SCALE,
+                             h=2*TILE_SIZE*TILE_SCALE)
+            standing_animations["right"].append(img)
+            standing_animations["left"].append(pg.transform.flip(img, True, False))
+
+        animation_images = {
+            "standing": standing_animations
+        }
+
+        return animation_images
+
+    def animate(self):
+
+        now = pg.time.get_ticks()
+
+        if self.facing_right:
+            if now - self.last_update > 600:
+                self.last_update = now
+                self.current_frame = (self.current_frame + 1) % len(self.animation_images['standing']["right"])
+                self.image = self.animation_images['standing']["right"][self.current_frame]
+        else:
+            if now - self.last_update > 600:
+                self.last_update = now
+                self.current_frame = (self.current_frame + 1) % len(self.animation_images['standing']["left"])
+                self.image = self.animation_images['standing']["left"][self.current_frame]
+
     def draw(self, screen, camera):
         screen.blit(self.image, (self.rect.x + camera.x, self.rect.y + camera.y))
-        if self.shielding:
-            # Calculate shield position
-            self.shield_deflect(screen)
-            #print(list(zip(*self.poly.exterior.coords.xy)))
-            #pg.draw.polygon(screen, BLUE, self.shield_poly)
-            pg.draw.lines(screen, BLUE, 1, self.shield_mask.outline())
+        # Calculate shield position
+        self.shield_deflect(screen)
+        pg.draw.lines(screen, BLUE, 1, self.shield_mask.outline())
+        draw_circle_alpha(screen,
+                          (255, 255, 255, 100),
+                          [screen.get_width()/2, screen.get_height()/2],
+                          100,
+                          3)

@@ -2,6 +2,7 @@ import pygame as pg
 import math
 from shapely.geometry import Polygon
 from .settings import *
+from .utils import read_image
 
 
 
@@ -13,11 +14,14 @@ class RangeAttack(pg.sprite.Sprite):
         self.screen = screen
         self.platforms = platforms
         self.camera = game.camera
+        self.enemies = game.enemies
         self.player_pos = player.rect.center
-        self.image = pg.Surface((30, 30), pg.SRCALPHA)
-        self.image.fill(YELLOW)
-        self.rect = self.image.get_rect(midtop=pos)
-        self.speed = 8
+        projectile_image = read_image("assets/images/projectile_sprite.png",
+                                      w=24, h=24)
+        self.image = pg.Surface((24, 24), pg.SRCALPHA)
+        self.image.blit(projectile_image, (0, 0))
+        self.rect = self.image.get_rect(center=pos)
+        self.speed = 10
         self.x_delta = (self.player_pos[0] - self.pos[0])
         self.y_delta = -(self.player_pos[1] - self.pos[1])
         self.theta = math.atan2(self.y_delta, self.x_delta) + math.pi/2
@@ -53,13 +57,16 @@ class RangeAttack(pg.sprite.Sprite):
 
         # If projectile collides with player's deflective shield, change
         # the angle of the projectile
-        if self.player.poly is not None and not self.theta_change:
+        if not self.theta_change:
             if self.poly.intersects(self.player.poly):
                 self.theta_change = True
                 theta_delta = 2*self.player.theta_orthog - self.theta
                 self.theta = theta_delta
-                
-                #self.kill()
+        else:
+            for e in self.enemies:
+                if pg.sprite.collide_rect(self, e):
+                    self.kill()
+                    e.kill()
 
         # Write collision method (projectile is removed on collision)
         if pg.sprite.collide_rect(self, self.player):
@@ -74,8 +81,7 @@ class Droid(pg.sprite.Sprite):
 
     def __init__(self, pos, patrol, game, *groups):
        super().__init__(*groups)
-       self.image = pg.Surface((TILE_SIZE * TILE_SCALE, 2 * TILE_SIZE * TILE_SCALE))
-       self.image.fill(RED)
+       self.image = pg.Surface((1.5*TILE_SIZE * TILE_SCALE, 1.5*2 * TILE_SIZE * TILE_SCALE))
        self.rect = self.image.get_rect(topleft=[pos[0] * TILE_SCALE, pos[1] * TILE_SCALE])
        self.game = game
        self.player = self.game.player
@@ -88,13 +94,21 @@ class Droid(pg.sprite.Sprite):
        self.attacking = False
        self.attacking_timer = pg.time.get_ticks()
 
+       # Animations
+       self.animation_images = game.animations["droid"]
+       self.last_update = pg.time.get_ticks()
+       self.current_frame = 0
+       self.image.blit(self.animation_images["standing"]["right"][self.current_frame], (0, 0))
+
     def update(self):
 
-        # State logic
-        if self.facing_left and (self.rect.x - self.player.rect.x) < 600:
-            self.attacking = True
-        else:
-            self.attacking = False
+        self.animate()
+
+        # Detect player logic
+        if self.facing_left and self.rect.x > self.player.rect.x:
+            self.detect_player()
+        elif not self.facing_left and self.rect.x < self.player.rect.x:
+            self.detect_player()
 
         # Patrolling
         if (pg.time.get_ticks() - self.patrol_timer > 1500) and not self.attacking:
@@ -116,6 +130,15 @@ class Droid(pg.sprite.Sprite):
             self.attacking_timer = pg.time.get_ticks()
             self.attack()
 
+    def detect_player(self):
+
+        self.attacking = True
+        for p in self.platforms:
+            clip = p.rect.clipline(self.rect.center, self.player.rect.center)
+            if clip:
+                self.attacking = False
+                break
+
     def attack(self):
         RangeAttack(self.rect.center,
                     self.player,
@@ -123,3 +146,64 @@ class Droid(pg.sprite.Sprite):
                     self.platforms,
                     self.game)
 
+    def animate(self):
+
+        now = pg.time.get_ticks()
+
+        if self.facing_left:
+            if (pg.time.get_ticks() - self.patrol_timer < 1500):
+                if now - self.last_update > 600:
+                    self.last_update = now
+                    self.current_frame = (self.current_frame + 1) % len(self.animation_images['standing']["left"])
+                    self.image = self.animation_images['standing']["left"][self.current_frame]
+            else:
+                self.image = self.animation_images['standing']["left"][0]
+        else:
+            if (pg.time.get_ticks() - self.patrol_timer < 1500):
+                if now - self.last_update > 600:
+                    self.last_update = now
+                    self.current_frame = (self.current_frame + 1) % len(self.animation_images['standing']["right"])
+                    self.image = self.animation_images['standing']["right"][self.current_frame]
+            else:
+                self.image = self.animation_images['standing']["right"][0]
+
+
+
+class Turret(pg.sprite.Sprite):
+
+    def __init__(self, pos, game, *groups):
+       super().__init__(*groups)
+       self.image = pg.Surface((TILE_SIZE * TILE_SCALE, TILE_SIZE * TILE_SCALE))
+       self.image.fill((255, 0, 255))
+       self.rect = self.image.get_rect(topleft=[pos[0] * TILE_SCALE, pos[1] * TILE_SCALE])
+       self.game = game
+       self.player = self.game.player
+       self.platforms = self.game.platforms
+       self.attacking = False
+       self.attacking_timer = pg.time.get_ticks()
+
+    def update(self):
+
+        # Detect player logic
+        self.detect_player()
+
+        # Attacking
+        if self.attacking and (pg.time.get_ticks() - self.attacking_timer > 1500):
+            self.attacking_timer = pg.time.get_ticks()
+            self.attack()
+
+    def detect_player(self):
+
+        self.attacking = True
+        for p in self.platforms:
+            clip = p.rect.clipline(self.rect.center, self.player.rect.center)
+            if clip:
+                self.attacking = False
+                break
+
+    def attack(self):
+        RangeAttack(self.rect.center,
+                    self.player,
+                    self.game.screen,
+                    self.platforms,
+                    self.game)

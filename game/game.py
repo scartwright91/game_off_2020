@@ -4,6 +4,7 @@ import sys
 from .level_parser import create_level, find_player_pos
 from .player import Player
 from .camera import CameraAwareLayeredUpdates
+from .animations import *
 
 
 class Game:
@@ -13,16 +14,24 @@ class Game:
         self.clock = clock
         self.screen_size = self.screen.get_size()
 
+        # Load animations
+        self.animations = {
+            "droid": load_droid_animations()
+        }
+
         # Create sprite groups
         self.platforms = pg.sprite.Group()
         self.enemies = pg.sprite.Group()
         self.projectiles = pg.sprite.Group()
+        self.foreground = pg.sprite.Group()
+        self.background = pg.sprite.Group()
 
         # Create player, camera and level
-        pos = find_player_pos()
+        self.level = 0
+        pos = find_player_pos(self.level)
         self.player = Player(pos, self)
         self.camera = CameraAwareLayeredUpdates(self.player, self.screen_size)
-        create_level(self)
+        create_level(self, self.level)
 
     def run(self):
         # main game loop
@@ -51,8 +60,10 @@ class Game:
 
     def draw(self):
         self.screen.fill((0, 0, 0))
+        self.camera.draw(self.screen, self.background)
         self.camera.draw(self.screen, self.platforms)
         self.camera.draw(self.screen, self.enemies)
+        self.camera.draw(self.screen, self.foreground)
         self.camera.draw(self.screen, self.projectiles)
         self.player.draw(self.screen, self.camera.cam)
         pg.display.flip()

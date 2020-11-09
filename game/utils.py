@@ -74,3 +74,9 @@ def wait_for_key(game):
             if event.type == pg.KEYUP:
                 waiting = False
 
+def draw_circle_alpha(surface, color, center, radius, width):
+    target_rect = pg.Rect(center, (0, 0)).inflate((radius * 2, radius * 2))
+    shape_surf = pg.Surface(target_rect.size, pg.SRCALPHA)
+    pg.draw.circle(shape_surf, color, (radius, radius), radius, width)
+    surface.blit(shape_surf, target_rect)
+
