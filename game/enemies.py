@@ -7,8 +7,9 @@ from .utils import read_image
 
 
 class RangeAttack(pg.sprite.Sprite):
-    def __init__(self, pos, player, screen, platforms, game):
+    def __init__(self, sprite, pos, player, screen, platforms, game):
         super().__init__(game.projectiles, game.camera)
+        self.sprite = sprite
         self.pos = [pos[0], pos[1]]
         self.player = player
         self.screen = screen
@@ -25,6 +26,7 @@ class RangeAttack(pg.sprite.Sprite):
         self.x_delta = (self.player_pos[0] - self.pos[0])
         self.y_delta = -(self.player_pos[1] - self.pos[1])
         self.theta = math.atan2(self.y_delta, self.x_delta) + math.pi/2
+        self.sprite.theta = 180*(self.theta/math.pi)
         self.theta_change = False
         self.x = self.pos[0]
         self.y = self.pos[1]
@@ -74,6 +76,9 @@ class RangeAttack(pg.sprite.Sprite):
         for p in self.platforms:
             if pg.sprite.collide_rect(self, p):
                 self.kill()
+
+        # Update sprite's theta
+        self.sprite.theta = self.theta
 
 
 
@@ -140,7 +145,8 @@ class Droid(pg.sprite.Sprite):
                 break
 
     def attack(self):
-        RangeAttack(self.rect.center,
+        RangeAttack(self,
+                    self.rect.center,
                     self.player,
                     self.game.screen,
                     self.platforms,
@@ -172,15 +178,26 @@ class Droid(pg.sprite.Sprite):
 class Turret(pg.sprite.Sprite):
 
     def __init__(self, pos, game, *groups):
-       super().__init__(*groups)
-       self.image = pg.Surface((TILE_SIZE * TILE_SCALE, TILE_SIZE * TILE_SCALE))
-       self.image.fill((255, 0, 255))
-       self.rect = self.image.get_rect(topleft=[pos[0] * TILE_SCALE, pos[1] * TILE_SCALE])
-       self.game = game
-       self.player = self.game.player
-       self.platforms = self.game.platforms
-       self.attacking = False
-       self.attacking_timer = pg.time.get_ticks()
+        super().__init__(*groups)
+        self.turret_mount = read_image("assets/images/turret_mount.png",
+                                 w=2*TILE_SIZE*TILE_SCALE,
+                                 h=2*TILE_SIZE*TILE_SCALE)
+        self.turret_gun = read_image("assets/images/turret.png",
+                                 w=2*TILE_SIZE*TILE_SCALE,
+                                 h=2*TILE_SIZE*TILE_SCALE)
+        self.image = pg.Surface(self.turret_gun.get_size(), pg.SRCALPHA)
+        self.mount_image = pg.Surface(self.turret_mount.get_size(), pg.SRCALPHA)
+        self.mount_image.blit(self.turret_mount, (0, 0))
+        self.image.blit(self.turret_gun, (0, 0))
+        self.pos = (pos[0] * TILE_SCALE, pos[1] * TILE_SCALE)
+        self.rect = self.image.get_rect(midtop=(self.pos[0], self.pos[1] - 30))
+        self.mount_rect = self.mount_image.get_rect(midtop=self.pos)
+        self.game = game
+        self.player = self.game.player
+        self.platforms = self.game.platforms
+        self.attacking = False
+        self.attacking_timer = pg.time.get_ticks()
+        self.theta = 2*math.pi
 
     def update(self):
 
@@ -192,6 +209,7 @@ class Turret(pg.sprite.Sprite):
             self.attacking_timer = pg.time.get_ticks()
             self.attack()
 
+
     def detect_player(self):
 
         self.attacking = True
@@ -202,8 +220,16 @@ class Turret(pg.sprite.Sprite):
                 break
 
     def attack(self):
-        RangeAttack(self.rect.center,
+
+        RangeAttack(self,
+                    self.rect.center,
                     self.player,
                     self.game.screen,
                     self.platforms,
                     self.game)
+
+        self.image = pg.transform.rotate(self.turret_gun, self.theta)
+        self.rect = self.image.get_rect(midtop=(self.pos[0], self.pos[1] - 30))
+        
+    def draw(self, screen, camera):
+        screen.blit(self.mount_image, (self.mount_rect.x + camera.x, self.mount_rect.y + camera.y))

@@ -27,7 +27,7 @@ class Game:
         self.background = pg.sprite.Group()
 
         # Create player, camera and level
-        self.level = 0
+        self.level = 1
         pos = find_player_pos(self.level)
         self.player = Player(pos, self)
         self.camera = CameraAwareLayeredUpdates(self.player, self.screen_size)
