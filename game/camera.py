@@ -4,11 +4,12 @@ import pygame as pg
 
 # Complex camera class
 class CameraAwareLayeredUpdates(pg.sprite.LayeredUpdates):
-    def __init__(self, target, screen_size):
+    def __init__(self, target, screen_size, world_size):
         super().__init__()
         self.target = target
         self.cam = pg.Vector2(0, 0)
         self.screen_size = screen_size
+        self.world_size = world_size
         if self.target:
             self.add(target)
 
@@ -18,6 +19,8 @@ class CameraAwareLayeredUpdates(pg.sprite.LayeredUpdates):
             x = -self.target.rect.center[0] + self.screen_size[0]/2
             y = -self.target.rect.center[1] + self.screen_size[1]/2
             self.cam += (pg.Vector2((x, y)) - self.cam)# * 0.15
+            self.cam.x = max(-(self.world_size[0]-self.screen_size[0]), min(0, self.cam.x))
+            self.cam.y = max(-(self.world_size[1]-self.screen_size[1]), min(0, self.cam.y))
 
     def draw(self, surface, spritegroup):
         spritedict = self.spritedict

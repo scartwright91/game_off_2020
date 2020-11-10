@@ -1,7 +1,7 @@
 
 import pygame as pg
 import sys
-from .level_parser import create_level, find_player_pos
+from .level_parser import create_level, find_player_pos, calculate_world_size
 from .player import Player
 from .camera import CameraAwareLayeredUpdates
 from .animations import *
@@ -29,8 +29,9 @@ class Game:
         # Create player, camera and level
         self.level = 1
         pos = find_player_pos(self.level)
+        self.world_size = calculate_world_size(self.level)
         self.player = Player(pos, self)
-        self.camera = CameraAwareLayeredUpdates(self.player, self.screen_size)
+        self.camera = CameraAwareLayeredUpdates(self.player, self.screen_size, self.world_size)
         create_level(self, self.level)
 
     def run(self):

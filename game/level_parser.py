@@ -16,6 +16,22 @@ def find_player_pos(level):
 
     return player_pos
 
+def calculate_world_size(level):
+
+    xs, ys = [], []
+
+    # iterate through layers
+    for layer in level_data["levels"][level]["layerInstances"]:
+        # Platforms
+        if layer["__identifier"] == "Platforms":
+            for tile in layer["autoLayerTiles"]:
+                xs.append(tile["px"][0] * TILE_SCALE)
+                ys.append(tile["px"][1] * TILE_SCALE)
+
+    max_x = max(xs)
+    max_y = max(ys)
+
+    return (max_x, max_y)
 
 def create_level(game, level):
 

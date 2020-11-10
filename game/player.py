@@ -121,7 +121,8 @@ class Player(pg.sprite.Sprite):
     def shield_deflect(self, screen):
 
         mouse_pos = pg.mouse.get_pos()
-        center_pos = [screen.get_width()/2, screen.get_height()/2]
+        center_pos = (self.rect.x + self.game.camera.cam.x, self.rect.y + self.game.camera.cam.y)
+        #center_pos = [screen.get_width()/2, screen.get_height()/2]
 
         x_delta = (mouse_pos[0] - center_pos[0])
         y_delta = (center_pos[1] - mouse_pos[1])
@@ -219,6 +220,6 @@ class Player(pg.sprite.Sprite):
         pg.draw.lines(screen, BLUE, 1, self.shield_mask.outline())
         draw_circle_alpha(screen,
                           (255, 255, 255, 100),
-                          [screen.get_width()/2, screen.get_height()/2],
+                          (self.rect.x + camera.x, self.rect.y + camera.y),
                           100,
                           3)
