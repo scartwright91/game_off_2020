@@ -1,6 +1,7 @@
 
 import pygame as pg
 import sys
+import random
 from .level_parser import create_level, find_player_pos, calculate_world_size
 from .player import Player
 from .camera import CameraAwareLayeredUpdates
@@ -19,6 +20,21 @@ class Game:
             "droid": load_droid_animations()
         }
 
+        # Load background
+        self.background_images = {
+            "moon": read_image("assets/images/moon.png", w=128*TILE_SCALE, h=128*TILE_SCALE)
+        }
+        
+        self.stars = []
+        for _ in range(30):
+            x = random.randint(0, self.screen_size[0])
+            y = random.randint(0, self.screen_size[1]/2)
+            star_type = random.choice(["star1", "star2"])
+            star_dim = random.randint(2, 15)
+            star = read_image("assets/images/{}.png".format(star_type), w=star_dim, h=star_dim)
+
+            self.stars.append({"star": star, "xy": (x, y)})
+
         # Create sprite groups
         self.platforms = pg.sprite.Group()
         self.enemies = pg.sprite.Group()
@@ -27,7 +43,7 @@ class Game:
         self.background = pg.sprite.Group()
 
         # Create player, camera and level
-        self.level = 1
+        self.level = 0
         pos = find_player_pos(self.level)
         self.world_size = calculate_world_size(self.level)
         self.player = Player(pos, self)
@@ -61,6 +77,12 @@ class Game:
 
     def draw(self):
         self.screen.fill((0, 0, 0))
+
+        # Background
+        for star in self.stars:
+            self.screen.blit(star["star"], star["xy"])
+        self.screen.blit(self.background_images["moon"], (700 + self.camera.cam.x*0.05, 100 + self.camera.cam.y*0.05))
+
         self.camera.draw(self.screen, self.background)
         self.camera.draw(self.screen, self.platforms)
         self.camera.draw(self.screen, self.enemies)
