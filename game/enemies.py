@@ -22,7 +22,7 @@ class RangeAttack(pg.sprite.Sprite):
         self.image = pg.Surface((24, 24), pg.SRCALPHA)
         self.image.blit(projectile_image, (0, 0))
         self.rect = self.image.get_rect(center=pos)
-        self.speed = 10
+        self.speed = 12
         self.x_delta = (self.player_pos[0] - self.pos[0])
         self.y_delta = -(self.player_pos[1] - self.pos[1])
         self.theta = math.atan2(self.y_delta, self.x_delta) + math.pi/2
@@ -137,12 +137,15 @@ class Droid(pg.sprite.Sprite):
 
     def detect_player(self):
 
-        self.attacking = True
-        for p in self.platforms:
-            clip = p.rect.clipline(self.rect.center, self.player.rect.center)
-            if clip:
-                self.attacking = False
-                break
+        if abs(self.rect.x - self.player.rect.x) > 800:
+            self.attacking = False
+        else:
+            self.attacking = True
+            for p in self.platforms:
+                clip = p.rect.clipline(self.rect.center, self.player.rect.center)
+                if clip:
+                    self.attacking = False
+                    break
 
     def attack(self):
         RangeAttack(self,
@@ -212,12 +215,15 @@ class Turret(pg.sprite.Sprite):
 
     def detect_player(self):
 
-        self.attacking = True
-        for p in self.platforms:
-            clip = p.rect.clipline(self.rect.center, self.player.rect.center)
-            if clip:
-                self.attacking = False
-                break
+        if abs(self.rect.x - self.player.rect.x) > 800:
+            self.attacking = False
+        else:
+            self.attacking = True
+            for p in self.platforms:
+                clip = p.rect.clipline(self.rect.center, self.player.rect.center)
+                if clip:
+                    self.attacking = False
+                    break
 
     def attack(self):
 

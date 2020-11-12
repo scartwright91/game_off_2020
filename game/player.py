@@ -7,23 +7,6 @@ from .utils import *
 
 
 
-class DeflectMove(pg.sprite.Sprite):
-
-    def __init__(self, mouse_pos, player_pos):
-        self.mouse_pos = mouse_pos
-        self.player_pos = player_pos
-
-    def update(self):
-        self.x_delta = (self.mouse_pos[0] - self.player_pos[0])
-        self.y_delta = -(self.mouse_pos[1] - self.player_pos[1])
-        self.theta = math.atan2(self.y_delta, self.x_delta) + math.pi/2
-        self.shield = pg.Vector2(
-            100 * math.sin(self.theta),
-            100 * math.cos(self.theta)
-        )
-
-
-
 class Player(pg.sprite.Sprite):
 
     def __init__(self, pos, game):
@@ -64,11 +47,11 @@ class Player(pg.sprite.Sprite):
 
         # Movement logic
         if left:
-            self.image = self.animation_images['standing']["left"][self.current_frame]
+            self.image = self.animation_images['running']["left"][self.current_frame]
             self.facing_right = False
             self.vel.x = -self.speed
         if right:
-            self.image = self.animation_images['standing']["right"][self.current_frame]
+            self.image = self.animation_images['running']["right"][self.current_frame]
             self.facing_right = True
             self.vel.x = self.speed
         if not(left or right):
@@ -82,7 +65,10 @@ class Player(pg.sprite.Sprite):
                 self.vel.y = 100
 
         # Adjust x offset
-        self.rect.x += self.vel.x
+        if self.rect.x <= 0 and self.vel.x < 0:
+            pass
+        else:
+            self.rect.x += self.vel.x
         # check x-axis collision
         self.collide(self.vel.x, 0)
 
@@ -122,7 +108,6 @@ class Player(pg.sprite.Sprite):
 
         mouse_pos = pg.mouse.get_pos()
         center_pos = (self.rect.centerx + self.game.camera.cam.x, self.rect.centery + self.game.camera.cam.y)
-        #center_pos = [screen.get_width()/2, screen.get_height()/2]
 
         x_delta = (mouse_pos[0] - center_pos[0])
         y_delta = (center_pos[1] - mouse_pos[1])
@@ -161,7 +146,7 @@ class Player(pg.sprite.Sprite):
         }
 
         # Shield coordinates
-        shield_poly = [
+        self.shield_poly = [
             shield_lower["lower"],
             shield_lower["upper"],
             shield_upper["upper"],
@@ -170,10 +155,10 @@ class Player(pg.sprite.Sprite):
 
         # Create surface and blit poly
         shield_surface = pg.Surface((1200, 800), pg.SRCALPHA)
-        pg.draw.polygon(shield_surface, BLUE, shield_poly)
+        pg.draw.polygon(shield_surface, BLUE, self.shield_poly)
 
         # Create poly
-        self.poly = Polygon(shield_poly)
+        self.poly = Polygon(self.shield_poly)
 
         # Extract mask
         self.shield_mask = pg.mask.from_surface(shield_surface)
@@ -192,8 +177,21 @@ class Player(pg.sprite.Sprite):
             standing_animations["right"].append(img)
             standing_animations["left"].append(pg.transform.flip(img, True, False))
 
+        running_animations = {
+            "left": [],
+            "right": []
+        }
+        img_dir = "assets/animations/player/running/"
+        for img_path in os.listdir(img_dir):
+            img = read_image(img_dir + img_path,
+                             w=TILE_SIZE*TILE_SCALE,
+                             h=2*TILE_SIZE*TILE_SCALE)
+            running_animations["right"].append(img)
+            running_animations["left"].append(pg.transform.flip(img, True, False))
+
         animation_images = {
-            "standing": standing_animations
+            "standing": standing_animations,
+            "running": running_animations
         }
 
         return animation_images
@@ -202,22 +200,34 @@ class Player(pg.sprite.Sprite):
 
         now = pg.time.get_ticks()
 
-        if self.facing_right:
-            if now - self.last_update > 600:
-                self.last_update = now
-                self.current_frame = (self.current_frame + 1) % len(self.animation_images['standing']["right"])
-                self.image = self.animation_images['standing']["right"][self.current_frame]
+        if self.vel.x != 0:
+            if self.facing_right:
+                if now - self.last_update > 200:
+                    self.last_update = now
+                    self.current_frame = (self.current_frame + 1) % len(self.animation_images['running']["right"])
+                    self.image = self.animation_images['running']["right"][self.current_frame]
+            else:
+                if now - self.last_update > 200:
+                    self.last_update = now
+                    self.current_frame = (self.current_frame + 1) % len(self.animation_images['running']["left"])
+                    self.image = self.animation_images['running']["left"][self.current_frame]
         else:
-            if now - self.last_update > 600:
-                self.last_update = now
-                self.current_frame = (self.current_frame + 1) % len(self.animation_images['standing']["left"])
-                self.image = self.animation_images['standing']["left"][self.current_frame]
+            if self.facing_right:
+                if now - self.last_update > 600:
+                    self.last_update = now
+                    self.current_frame = (self.current_frame + 1) % len(self.animation_images['standing']["right"])
+                    self.image = self.animation_images['standing']["right"][self.current_frame]
+            else:
+                if now - self.last_update > 600:
+                    self.last_update = now
+                    self.current_frame = (self.current_frame + 1) % len(self.animation_images['standing']["left"])
+                    self.image = self.animation_images['standing']["left"][self.current_frame]
 
     def draw(self, screen, camera):
         screen.blit(self.image, (self.rect.x + camera.x, self.rect.y + camera.y))
         # Calculate shield position
         self.shield_deflect(screen)
-        pg.draw.lines(screen, BLUE, 1, self.shield_mask.outline())
+        pg.draw.polygon(screen, BLUE, self.shield_poly)
         draw_circle_alpha(screen,
                           (255, 255, 255, 100),
                           (self.rect.centerx + camera.x, self.rect.centery + camera.y),

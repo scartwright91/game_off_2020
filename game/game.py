@@ -36,6 +36,8 @@ class Game:
             self.stars.append({"star": star, "xy": (x, y)})
 
         # Create sprite groups
+        self.entities = pg.sprite.Group()
+        self.endpoints = pg.sprite.Group()
         self.platforms = pg.sprite.Group()
         self.enemies = pg.sprite.Group()
         self.projectiles = pg.sprite.Group()
@@ -74,6 +76,15 @@ class Game:
 
     def update(self):
         self.camera.update()
+
+        # Create new level if player touches endpoint
+        for endpoint in self.endpoints:
+            if pg.sprite.collide_rect(self.player, endpoint):
+                self.level = endpoint.connected_level
+                pos = find_player_pos(self.level)
+                self.camera.world_size = calculate_world_size(self.level)
+                self.player.rect.topleft = pos
+                create_level(self, self.level)
 
     def draw(self):
         self.screen.fill((0, 0, 0))

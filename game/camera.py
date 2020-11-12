@@ -1,5 +1,6 @@
 
 import pygame as pg
+from .settings import TILE_SIZE
 
 
 # Complex camera class
