@@ -20,17 +20,36 @@ class Game:
             "droid": load_droid_animations()
         }
 
+        # Load sound effects
+        self.sound_effects = {
+            "laser": pg.mixer.Sound('assets/music/laserSmall_001.ogg'),
+            "explosion": pg.mixer.Sound('assets/music/explosionCrunch_000.ogg'),
+            "deflect": pg.mixer.Sound('assets/music/forceField_002.ogg')
+        }
+        self.sound_effects["laser"].set_volume(0.5)
+        self.sound_effects["explosion"].set_volume(0.1)
+        self.sound_effects["deflect"].set_volume(0.1)
+
         # Load background
         self.background_images = {
             "moon": read_image("assets/images/moon.png", w=128*TILE_SCALE, h=128*TILE_SCALE)
         }
         
+        # Create stars
         self.stars = []
-        for _ in range(30):
+        for _ in range(40):
             x = random.randint(0, self.screen_size[0])
-            y = random.randint(0, self.screen_size[1]/2)
+            y = random.randint(0, self.screen_size[1])
             star_type = random.choice(["star1", "star2"])
-            star_dim = random.randint(2, 15)
+            star_dim = random.randint(2, 5)
+            star = read_image("assets/images/{}.png".format(star_type), w=star_dim, h=star_dim)
+
+            self.stars.append({"star": star, "xy": (x, y)})
+        for _ in range(10):
+            x = random.randint(0, self.screen_size[0])
+            y = random.randint(0, self.screen_size[1])
+            star_type = random.choice(["star1", "star2"])
+            star_dim = random.randint(5, 15)
             star = read_image("assets/images/{}.png".format(star_type), w=star_dim, h=star_dim)
 
             self.stars.append({"star": star, "xy": (x, y)})
@@ -38,6 +57,7 @@ class Game:
         # Create sprite groups
         self.entities = pg.sprite.Group()
         self.endpoints = pg.sprite.Group()
+        self.particles = pg.sprite.Group()
         self.platforms = pg.sprite.Group()
         self.enemies = pg.sprite.Group()
         self.projectiles = pg.sprite.Group()
@@ -76,6 +96,7 @@ class Game:
 
     def update(self):
         self.camera.update()
+        self.particles.update()
 
         # Create new level if player touches endpoint
         for endpoint in self.endpoints:
@@ -94,9 +115,12 @@ class Game:
             self.screen.blit(star["star"], star["xy"])
         self.screen.blit(self.background_images["moon"], (700 + self.camera.cam.x*0.05, 100 + self.camera.cam.y*0.05))
 
+        # sprites
         self.camera.draw(self.screen, self.background)
-        self.camera.draw(self.screen, self.platforms)
         self.camera.draw(self.screen, self.enemies)
+        for particle in self.particles:
+            particle.draw(self.screen, self.camera.cam)
+        self.camera.draw(self.screen, self.platforms)
         self.camera.draw(self.screen, self.foreground)
         self.camera.draw(self.screen, self.projectiles)
         self.player.draw(self.screen, self.camera.cam)

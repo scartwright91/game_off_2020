@@ -1,8 +1,10 @@
 import pygame as pg
 import math
+import random
 from shapely.geometry import Polygon
 from .settings import *
 from .utils import read_image
+from .vfx import Particle
 
 
 
@@ -14,6 +16,7 @@ class RangeAttack(pg.sprite.Sprite):
         self.player = player
         self.screen = screen
         self.platforms = platforms
+        self.game = game
         self.camera = game.camera
         self.enemies = game.enemies
         self.player_pos = player.rect.center
@@ -32,10 +35,6 @@ class RangeAttack(pg.sprite.Sprite):
         self.y = self.pos[1]
 
     def update(self):
-
-        # Delete if projectiles leaves screen
-        if abs(self.rect.x - self.player.rect.x > self.screen.get_width()) or abs(self.rect.y - self.player.rect.y > self.screen.get_height()):
-            self.kill() 
 
         # Make hypoteneuse equal to the speed value, calculate incremental x, y values
         h = self.speed
@@ -61,24 +60,30 @@ class RangeAttack(pg.sprite.Sprite):
         # the angle of the projectile
         if not self.theta_change:
             if self.poly.intersects(self.player.poly):
+                self.game.sound_effects["deflect"].play()
                 self.theta_change = True
                 theta_delta = 2*self.player.theta_orthog - self.theta
                 self.theta = theta_delta
         else:
             for e in self.enemies:
                 if pg.sprite.collide_rect(self, e):
-                    self.kill()
-                    e.kill()
+                    self.explode()
+                    #e.kill()
 
         # Write collision method (projectile is removed on collision)
         if pg.sprite.collide_rect(self, self.player):
-            self.kill()
+            self.explode()
         for p in self.platforms:
             if pg.sprite.collide_rect(self, p):
-                self.kill()
+                self.explode()
 
         # Update sprite's theta
         self.sprite.theta = self.theta
+
+    def explode(self):
+        self.game.sound_effects["explosion"].play()
+        Particle(self.rect.center, 70, self.game.particles)
+        self.kill()
 
 
 
@@ -132,20 +137,21 @@ class Droid(pg.sprite.Sprite):
 
         # Attacking
         if self.attacking and (pg.time.get_ticks() - self.attacking_timer > 1500):
+            self.game.sound_effects["laser"].play()
             self.attacking_timer = pg.time.get_ticks()
             self.attack()
 
     def detect_player(self):
 
-        if abs(self.rect.x - self.player.rect.x) > 800:
-            self.attacking = False
-        else:
+        if abs(self.rect.x - self.player.rect.x) < 800:
             self.attacking = True
             for p in self.platforms:
                 clip = p.rect.clipline(self.rect.center, self.player.rect.center)
                 if clip:
                     self.attacking = False
                     break
+        else:
+            self.attacking = False
 
     def attack(self):
         RangeAttack(self,
@@ -209,6 +215,7 @@ class Turret(pg.sprite.Sprite):
 
         # Attacking
         if self.attacking and (pg.time.get_ticks() - self.attacking_timer > 1500):
+            self.game.sound_effects["laser"].play()
             self.attacking_timer = pg.time.get_ticks()
             self.attack()
 

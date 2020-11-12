@@ -227,7 +227,7 @@ class Player(pg.sprite.Sprite):
         screen.blit(self.image, (self.rect.x + camera.x, self.rect.y + camera.y))
         # Calculate shield position
         self.shield_deflect(screen)
-        pg.draw.polygon(screen, BLUE, self.shield_poly)
+        pg.draw.polygon(screen, (255, 255, 255, 100), self.shield_poly)
         draw_circle_alpha(screen,
                           (255, 255, 255, 100),
                           (self.rect.centerx + camera.x, self.rect.centery + camera.y),
