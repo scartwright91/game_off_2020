@@ -6,6 +6,7 @@ from .level_parser import create_level, find_player_pos, calculate_world_size
 from .player import Player
 from .camera import CameraAwareLayeredUpdates
 from .animations import *
+from .utils import draw_text
 
 
 class Game:
@@ -65,7 +66,7 @@ class Game:
         self.background = pg.sprite.Group()
 
         # Create player, camera and level
-        self.level = 0
+        self.level = 2
         pos = find_player_pos(self.level)
         self.world_size = calculate_world_size(self.level)
         self.player = Player(pos, self)
@@ -124,5 +125,6 @@ class Game:
         self.camera.draw(self.screen, self.foreground)
         self.camera.draw(self.screen, self.projectiles)
         self.player.draw(self.screen, self.camera.cam)
+        draw_text(self.screen, "{}".format(self.clock.get_fps()), (255, 0, 0), 50, 50)
         pg.display.flip()
 

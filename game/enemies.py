@@ -10,7 +10,7 @@ from .vfx import Particle
 
 class RangeAttack(pg.sprite.Sprite):
     def __init__(self, sprite, pos, player, screen, platforms, game):
-        super().__init__(game.projectiles, game.camera)
+        super().__init__(game.projectiles, game.entities, game.camera)
         self.sprite = sprite
         self.pos = [pos[0], pos[1]]
         self.player = player
@@ -68,7 +68,7 @@ class RangeAttack(pg.sprite.Sprite):
             for e in self.enemies:
                 if pg.sprite.collide_rect(self, e):
                     self.explode()
-                    #e.kill()
+                    e.health -= 50
 
         # Write collision method (projectile is removed on collision)
         if pg.sprite.collide_rect(self, self.player):
@@ -103,6 +103,7 @@ class Droid(pg.sprite.Sprite):
        self.patrol_timer = pg.time.get_ticks()
        self.attacking = False
        self.attacking_timer = pg.time.get_ticks()
+       self.health = 100
 
        # Animations
        self.animation_images = game.animations["droid"]
@@ -111,6 +112,9 @@ class Droid(pg.sprite.Sprite):
        self.image.blit(self.animation_images["standing"]["right"][self.current_frame], (0, 0))
 
     def update(self):
+
+        if self.health <= 0:
+            self.kill()
 
         self.animate()
 
@@ -207,8 +211,12 @@ class Turret(pg.sprite.Sprite):
         self.attacking = False
         self.attacking_timer = pg.time.get_ticks()
         self.theta = 2*math.pi
+        self.health = 100
 
     def update(self):
+
+        if self.health <= 0:
+            self.kill()
 
         # Detect player logic
         self.detect_player()

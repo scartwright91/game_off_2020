@@ -28,7 +28,7 @@ def read_image(path, w=None, h=None, create_surface=False):
     else:
         return img
 
-def draw_text(screen, text, color, x, y, center=False, size=None):
+def draw_text(screen, text, color, x, y, center=False, size=20):
     font = pg.font.SysFont(None, size)
     text_surface = font.render(text, True, color)
     text_rect = text_surface.get_rect()
