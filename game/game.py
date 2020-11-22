@@ -66,7 +66,7 @@ class Game:
         self.background = pg.sprite.Group()
 
         # Create player, camera and level
-        self.level = 0
+        self.level = 3
         pos = find_player_pos(self.level)
         self.world_size = calculate_world_size(self.level)
         self.player = Player(pos, self)
@@ -97,7 +97,7 @@ class Game:
 
     def update(self):
 
-        self.camera.update()
+        self.camera.update(self.level)
         self.particles.update()
 
         if not self.player.alive:

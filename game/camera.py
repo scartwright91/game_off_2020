@@ -14,11 +14,14 @@ class CameraAwareLayeredUpdates(pg.sprite.LayeredUpdates):
         if self.target:
             self.add(target)
 
-    def update(self, *args):
+    def update(self, level, *args):
         super().update(*args)
         if self.target:
             x = -self.target.rect.center[0] + self.screen_size[0]/2
-            y = -self.target.rect.center[1] + self.screen_size[1]/2
+            if level == 4:
+                y = -self.target.rect.center[1] + self.screen_size[1]/3
+            else:
+                y = -self.target.rect.center[1] + self.screen_size[1]/2
             self.cam += (pg.Vector2((x, y)) - self.cam)# * 0.15
             self.cam.x = max(-(self.world_size[0]-self.screen_size[0]), min(0, self.cam.x))
             self.cam.y = max(-(self.world_size[1]-self.screen_size[1]), min(0, self.cam.y))
