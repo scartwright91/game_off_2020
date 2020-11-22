@@ -66,7 +66,7 @@ class Game:
         self.background = pg.sprite.Group()
 
         # Create player, camera and level
-        self.level = 2
+        self.level = 0
         pos = find_player_pos(self.level)
         self.world_size = calculate_world_size(self.level)
         self.player = Player(pos, self)
@@ -96,8 +96,12 @@ class Game:
                     self.playing = False
 
     def update(self):
+
         self.camera.update()
         self.particles.update()
+
+        if not self.player.alive:
+            self.playing = False
 
         # Create new level if player touches endpoint
         for endpoint in self.endpoints:

@@ -25,3 +25,5 @@ def load_droid_animations():
     }
 
     return animation_images
+
+

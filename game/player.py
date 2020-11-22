@@ -23,8 +23,10 @@ class Player(pg.sprite.Sprite):
         self.jump_val = 20
         self.jump_timer = pg.time.get_ticks()
         self.vel = pg.Vector2(0, 0)
+        self.alive = True
 
         # shield deflect
+        self.alpha = 255
         self.poly = None
 
         # Animations
@@ -70,13 +72,13 @@ class Player(pg.sprite.Sprite):
         else:
             self.rect.x += self.vel.x
         # check x-axis collision
-        self.collide(self.vel.x, 0)
+        self.collidex(self.vel.x)
 
         # y-axis logic
         self.rect.top += self.vel.y
         # Check y-axis collision
         self.grounded = False
-        self.collide(0, self.vel.y)
+        self.collidey(self.vel.y)
 
     def jump(self):
         self.jump_timer = pg.time.get_ticks()
@@ -88,19 +90,25 @@ class Player(pg.sprite.Sprite):
             self.vel.y = -self.jump_val
             self.double_jump_active = False
 
-    def collide(self, xvel, yvel):
+    def collidex(self, xvel):
         for p in self.game.platforms:
             if pg.sprite.collide_rect(self, p):
                 if xvel > 0:
                     self.rect.right = p.rect.left
                 if xvel < 0:
                     self.rect.left = p.rect.right
+
+    def collidey(self, yvel):
+        for p in self.game.platforms:
+            if pg.sprite.collide_rect(self, p):
                 if yvel > 0:
                     self.rect.bottom = p.rect.top
                     self.vel.y = 0
                     self.grounded = True
                     self.jump_active = True
                     self.double_jump_active = True
+                    if p.moving:
+                        self.rect.x += self.speed
                 if yvel < 0:
                     self.rect.top = p.rect.bottom
 
@@ -227,9 +235,9 @@ class Player(pg.sprite.Sprite):
         screen.blit(self.image, (self.rect.x + camera.x, self.rect.y + camera.y))
         # Calculate shield position
         self.shield_deflect(screen)
-        pg.draw.polygon(screen, (255, 255, 255, 100), self.shield_poly)
+        pg.draw.polygon(screen, (197, 219, 212, self.alpha), self.shield_poly)
         draw_circle_alpha(screen,
-                          (255, 255, 255, 100),
+                          (197, 219, 212, self.alpha),
                           (self.rect.centerx + camera.x, self.rect.centery + camera.y),
                           100,
                           3)

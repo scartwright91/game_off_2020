@@ -72,6 +72,10 @@ class RangeAttack(pg.sprite.Sprite):
 
         # Write collision method (projectile is removed on collision)
         if pg.sprite.collide_rect(self, self.player):
+            if self.player.alpha > 0:
+                self.player.alpha -= min([75, self.player.alpha])
+            else:
+                self.player.alive = False
             self.explode()
         for p in self.platforms:
             if pg.sprite.collide_rect(self, p):
