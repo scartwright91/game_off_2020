@@ -28,6 +28,7 @@ class Player(pg.sprite.Sprite):
         # shield deflect
         self.alpha = 255
         self.poly = None
+        self.shield_available = True
 
         # Animations
         self.animation_images = self.load_animations()
@@ -45,7 +46,7 @@ class Player(pg.sprite.Sprite):
         left = pressed[pg.K_a]
         right = pressed[pg.K_d]
 
-        if jump and (pg.time.get_ticks() - self.jump_timer > 300): self.jump()
+        if jump and (pg.time.get_ticks() - self.jump_timer > 300) and self.shield_available: self.jump()
 
         # Movement logic
         if left:
@@ -58,6 +59,14 @@ class Player(pg.sprite.Sprite):
             self.vel.x = self.speed
         if not(left or right):
             self.vel.x = 0
+
+        # Electric field logic
+        self.shield_available = True
+        for ef in self.game.electric_fields:
+            if ef.active:
+                if pg.sprite.collide_rect(self, ef):
+                    self.vel.x = 0
+                    self.shield_available = False
 
         # Gravity logic
         if not self.grounded:
@@ -79,21 +88,6 @@ class Player(pg.sprite.Sprite):
         # Check y-axis collision
         self.grounded = False
         self.collidey(self.vel.y)
-
-        # Electric field logic
-        for ef in self.game.electric_fields:
-            if ef.active:
-                if pg.sprite.collide_rect(self, ef):
-                    # player knocked back
-                    if self.rect.centerx < ef.rect.centerx:
-                        self.rect.centerx -= 2 * TILE_SIZE * TILE_SCALE
-                    else:
-                        self.rect.centerx += 2 * TILE_SIZE * TILE_SCALE
-                    # player takes damage
-                    if self.alpha > 0:
-                        self.alpha -= min(self.alpha, 75)
-                    else:
-                        self.alive = False
 
     def jump(self):
         self.jump_timer = pg.time.get_ticks()
@@ -122,7 +116,7 @@ class Player(pg.sprite.Sprite):
                     self.grounded = True
                     self.jump_active = True
                     self.double_jump_active = True
-                    if p.moving:
+                    if p.moving and self.shield_available:
                         self.rect.x += self.speed
                 if yvel < 0:
                     self.rect.top = p.rect.bottom
@@ -248,8 +242,9 @@ class Player(pg.sprite.Sprite):
 
     def draw(self, screen, camera):
         screen.blit(self.image, (self.rect.x + camera.x, self.rect.y + camera.y))
-        # Calculate shield position
-        self.shield_deflect(screen)
+        if self.shield_available:
+            # Calculate shield position
+            self.shield_deflect(screen)
         pg.draw.polygon(screen, (197, 219, 212, self.alpha), self.shield_poly)
         draw_circle_alpha(screen,
                           (197, 219, 212, self.alpha),

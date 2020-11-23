@@ -81,11 +81,6 @@ class RangeAttack(pg.sprite.Sprite):
         for p in self.platforms:
             if pg.sprite.collide_rect(self, p):
                 self.explode()
-        # Electric field logic
-        for ef in self.game.electric_fields:
-            if ef.active:
-                if pg.sprite.collide_rect(self, ef):
-                    self.explode()
 
         # Update sprite's theta
         self.sprite.theta = self.theta
