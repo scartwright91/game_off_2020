@@ -25,11 +25,13 @@ class Game:
         self.sound_effects = {
             "laser": pg.mixer.Sound('assets/music/laserSmall_001.ogg'),
             "explosion": pg.mixer.Sound('assets/music/explosionCrunch_000.ogg'),
-            "deflect": pg.mixer.Sound('assets/music/forceField_002.ogg')
+            "deflect": pg.mixer.Sound('assets/music/forceField_002.ogg'),
+            "electric": pg.mixer.Sound('assets/music/electricField.ogg')
         }
         self.sound_effects["laser"].set_volume(0.5)
         self.sound_effects["explosion"].set_volume(0.1)
         self.sound_effects["deflect"].set_volume(0.1)
+        self.sound_effects["electric"].set_volume(0.1)
 
         # Load background
         self.background_images = {
@@ -61,6 +63,7 @@ class Game:
         self.particles = pg.sprite.Group()
         self.platforms = pg.sprite.Group()
         self.enemies = pg.sprite.Group()
+        self.electric_fields = pg.sprite.Group()
         self.projectiles = pg.sprite.Group()
         self.foreground = pg.sprite.Group()
         self.background = pg.sprite.Group()
@@ -125,6 +128,7 @@ class Game:
         self.camera.draw(self.screen, self.enemies)
         for particle in self.particles:
             particle.draw(self.screen, self.camera.cam)
+        self.camera.draw(self.screen, self.electric_fields)
         self.camera.draw(self.screen, self.platforms)
         self.camera.draw(self.screen, self.foreground)
         self.camera.draw(self.screen, self.projectiles)

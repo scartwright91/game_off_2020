@@ -4,7 +4,7 @@ import pygame as pg
 import os
 from .settings import *
 from .utils import read_image
-from .enemies import Droid, Turret
+from .enemies import Droid, Turret, ElectricField
 
 
 def find_player_pos(level):
@@ -73,6 +73,10 @@ def create_level(game, level):
                     Endpoint(entity, game.endpoints, game.camera, game.entities)
                 if entity["__identifier"] == "MovingTile":
                     MovingTile(entity, game.platforms, game.camera, game.entities)
+                if entity["__identifier"] == "ElectricField":
+                    ElectricField(entity, game.sound_effects["electric"], game.electric_fields, game.camera, game.entities)
+
+
 
 class Tile(pg.sprite.Sprite):
     def __init__(self, tile_meta, tileset, *groups):

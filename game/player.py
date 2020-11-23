@@ -80,6 +80,21 @@ class Player(pg.sprite.Sprite):
         self.grounded = False
         self.collidey(self.vel.y)
 
+        # Electric field logic
+        for ef in self.game.electric_fields:
+            if ef.active:
+                if pg.sprite.collide_rect(self, ef):
+                    # player knocked back
+                    if self.rect.centerx < ef.rect.centerx:
+                        self.rect.centerx -= 2 * TILE_SIZE * TILE_SCALE
+                    else:
+                        self.rect.centerx += 2 * TILE_SIZE * TILE_SCALE
+                    # player takes damage
+                    if self.alpha > 0:
+                        self.alpha -= min(self.alpha, 75)
+                    else:
+                        self.alive = False
+
     def jump(self):
         self.jump_timer = pg.time.get_ticks()
         # jump and double jump logic

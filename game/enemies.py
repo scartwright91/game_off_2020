@@ -1,6 +1,7 @@
 import pygame as pg
 import math
 import random
+import os
 from shapely.geometry import Polygon
 from .settings import *
 from .utils import read_image
@@ -80,6 +81,11 @@ class RangeAttack(pg.sprite.Sprite):
         for p in self.platforms:
             if pg.sprite.collide_rect(self, p):
                 self.explode()
+        # Electric field logic
+        for ef in self.game.electric_fields:
+            if ef.active:
+                if pg.sprite.collide_rect(self, ef):
+                    self.explode()
 
         # Update sprite's theta
         self.sprite.theta = self.theta
@@ -258,3 +264,59 @@ class Turret(pg.sprite.Sprite):
         
     def draw(self, screen, camera):
         screen.blit(self.mount_image, (self.mount_rect.x + camera.x, self.mount_rect.y + camera.y))
+
+
+
+class ElectricField(pg.sprite.Sprite):
+
+    def __init__(self, tile_meta, sound_effect, *groups):
+        super().__init__(*groups)
+        self.tile_meta = tile_meta
+        self.sound_effect = sound_effect
+        self.pos = [tile_meta["px"][0] * TILE_SCALE, tile_meta["px"][1] * TILE_SCALE]
+
+        # images
+        self.electric_field = read_image("assets/images/electric_field.png",
+                                         w=2*TILE_SIZE*TILE_SCALE,
+                                         h=4*TILE_SIZE*TILE_SCALE,
+                                         create_surface=True)
+        self.images = []
+        for img_path in os.listdir("assets/animations/electric_field/"):
+            self.images.append(
+                read_image("assets/animations/electric_field/" + img_path,
+                           w=2*TILE_SIZE*TILE_SCALE,
+                           h=4*TILE_SIZE*TILE_SCALE,
+                           create_surface=True)
+            )
+        self.image = self.images[0]
+        self.rect = self.image.get_rect(topleft=self.pos)
+
+        # animations
+        self.timer = pg.time.get_ticks()
+        self.index = 0
+
+        # activation
+        self.active = True
+        self.active_timer = pg.time.get_ticks()
+        self.sound_effect.play()
+
+    def update(self):
+
+        now = pg.time.get_ticks()
+
+        if self.active:
+            if now - self.timer > 100:
+                self.index = (self.index + 1) % len(self.images)
+                self.image = self.images[self.index]
+                self.timer = pg.time.get_ticks()
+            if now - self.active_timer > 1000:
+                self.sound_effect.stop()
+                self.active = False
+                self.active_timer = pg.time.get_ticks()
+        else:
+            self.image = self.electric_field
+            if now - self.active_timer > 1000:
+                self.sound_effect.play(0)
+                self.active = True
+                self.active_timer = pg.time.get_ticks()
+
