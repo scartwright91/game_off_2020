@@ -20,6 +20,7 @@ class RangeAttack(pg.sprite.Sprite):
         self.game = game
         self.camera = game.camera
         self.enemies = game.enemies
+        self.bosses = game.bosses
         self.player_pos = player.rect.center
         projectile_image = read_image("assets/images/projectile_sprite.png",
                                       w=24, h=24)
@@ -69,7 +70,13 @@ class RangeAttack(pg.sprite.Sprite):
             for e in self.enemies:
                 if pg.sprite.collide_rect(self, e):
                     self.explode()
-                    e.health -= 50
+                    e.disabled = True
+                    e.disabled_timer = pg.time.get_ticks()
+                    e.current_frame = 0
+            for boss in self.bosses:
+                if pg.sprite.collide_rect(self, boss):
+                    self.explode()
+                    boss.image_index += 1
 
         # Write collision method (projectile is removed on collision)
         if pg.sprite.collide_rect(self, self.player):
@@ -87,7 +94,7 @@ class RangeAttack(pg.sprite.Sprite):
 
     def explode(self):
         self.game.sound_effects["explosion"].play()
-        Particle(self.rect.center, 70, self.game.particles)
+        Particle(self.rect.center, 10, 70, (65, 72, 93), self.game.particles, self.game.camera)
         self.kill()
 
 
@@ -108,7 +115,8 @@ class Droid(pg.sprite.Sprite):
        self.patrol_timer = pg.time.get_ticks()
        self.attacking = False
        self.attacking_timer = pg.time.get_ticks()
-       self.health = 100
+       self.disabled = False
+       self.disabled_timer = pg.time.get_ticks()
 
        # Animations
        self.animation_images = game.animations["droid"]
@@ -118,10 +126,14 @@ class Droid(pg.sprite.Sprite):
 
     def update(self):
 
-        if self.health <= 0:
-            self.kill()
-
         self.animate()
+
+        now = pg.time.get_ticks()
+        if now - self.disabled_timer > 2500:
+            self.disabled = False
+
+        if self.disabled:
+            return None
 
         # Detect player logic
         if self.facing_left and self.rect.x > self.player.rect.x:
@@ -130,24 +142,24 @@ class Droid(pg.sprite.Sprite):
             self.detect_player()
 
         # Patrolling
-        if (pg.time.get_ticks() - self.patrol_timer > 1500) and not self.attacking:
+        if (now - self.patrol_timer > 1500) and not self.attacking:
             if self.facing_left:
                 self.rect.x -= self.speed
                 if self.rect.x <= self.patrol[self.patrol_index].x:
                     self.facing_left = False
                     self.patrol_index = (self.patrol_index + 1) % len(self.patrol)
-                    self.patrol_timer = pg.time.get_ticks()
+                    self.patrol_timer = now
             else:
                 self.rect.x += self.speed
                 if self.rect.x >= self.patrol[self.patrol_index].x:
                     self.facing_left = True
                     self.patrol_index = (self.patrol_index + 1) % len(self.patrol)
-                    self.patrol_timer = pg.time.get_ticks()
+                    self.patrol_timer = now
 
         # Attacking
-        if self.attacking and (pg.time.get_ticks() - self.attacking_timer > 1500):
+        if self.attacking and (now - self.attacking_timer > 1500):
             self.game.sound_effects["laser"].play()
-            self.attacking_timer = pg.time.get_ticks()
+            self.attacking_timer = now
             self.attack()
 
     def detect_player(self):
@@ -174,22 +186,34 @@ class Droid(pg.sprite.Sprite):
 
         now = pg.time.get_ticks()
 
-        if self.facing_left:
-            if (pg.time.get_ticks() - self.patrol_timer < 1500):
-                if now - self.last_update > 600:
+        if self.disabled:
+            if self.facing_left:
+                if now - self.last_update > 100:
                     self.last_update = now
-                    self.current_frame = (self.current_frame + 1) % len(self.animation_images['standing']["left"])
-                    self.image = self.animation_images['standing']["left"][self.current_frame]
+                    self.current_frame = (self.current_frame + 1) % len(self.animation_images['disabled']["left"])
+                    self.image = self.animation_images['disabled']["left"][self.current_frame]
             else:
-                self.image = self.animation_images['standing']["left"][0]
+                if now - self.last_update > 100:
+                    self.last_update = now
+                    self.current_frame = (self.current_frame + 1) % len(self.animation_images['disabled']["right"])
+                    self.image = self.animation_images['disabled']["right"][self.current_frame]
         else:
-            if (pg.time.get_ticks() - self.patrol_timer < 1500):
-                if now - self.last_update > 600:
-                    self.last_update = now
-                    self.current_frame = (self.current_frame + 1) % len(self.animation_images['standing']["right"])
-                    self.image = self.animation_images['standing']["right"][self.current_frame]
+            if self.facing_left:
+                if (pg.time.get_ticks() - self.patrol_timer < 1500):
+                    if now - self.last_update > 600:
+                        self.last_update = now
+                        self.current_frame = (self.current_frame + 1) % len(self.animation_images['standing']["left"])
+                        self.image = self.animation_images['standing']["left"][self.current_frame]
+                else:
+                    self.image = self.animation_images['standing']["left"][0]
             else:
-                self.image = self.animation_images['standing']["right"][0]
+                if (pg.time.get_ticks() - self.patrol_timer < 1500):
+                    if now - self.last_update > 600:
+                        self.last_update = now
+                        self.current_frame = (self.current_frame + 1) % len(self.animation_images['standing']["right"])
+                        self.image = self.animation_images['standing']["right"][self.current_frame]
+                else:
+                    self.image = self.animation_images['standing']["right"][0]
 
 
 
@@ -206,6 +230,8 @@ class Turret(pg.sprite.Sprite):
         self.image = pg.Surface(self.turret_gun.get_size(), pg.SRCALPHA)
         self.mount_image = pg.Surface(self.turret_mount.get_size(), pg.SRCALPHA)
         self.mount_image.blit(self.turret_mount, (0, 0))
+        self.mount_image_copy = self.mount_image.copy()
+        self.animation_images = game.animations["droid"]
         self.image.blit(self.turret_gun, (0, 0))
         self.pos = (pos[0] * TILE_SCALE, pos[1] * TILE_SCALE)
         self.rect = self.image.get_rect(midtop=(self.pos[0], self.pos[1] - 30))
@@ -216,12 +242,22 @@ class Turret(pg.sprite.Sprite):
         self.attacking = False
         self.attacking_timer = pg.time.get_ticks()
         self.theta = 2*math.pi
-        self.health = 100
+        self.disabled = False
+        self.disabled_timer = pg.time.get_ticks()
+
+        self.last_update = pg.time.get_ticks()
+        self.current_frame = 0
 
     def update(self):
 
-        if self.health <= 0:
-            self.kill()
+        self.animate()
+
+        now = pg.time.get_ticks()
+        if now - self.disabled_timer > 2500:
+            self.disabled = False
+
+        if self.disabled:
+            return None
 
         # Detect player logic
         self.detect_player()
@@ -231,6 +267,16 @@ class Turret(pg.sprite.Sprite):
             self.game.sound_effects["laser"].play()
             self.attacking_timer = pg.time.get_ticks()
             self.attack()
+
+    def animate(self):
+        now = pg.time.get_ticks()
+        if self.disabled:
+            if now - self.last_update > 100:
+                self.last_update = now
+                self.current_frame = (self.current_frame + 1) % len(self.animation_images['turret'])
+                self.mount_image_copy = self.animation_images['turret'][self.current_frame]
+        else:
+            self.mount_image_copy = self.mount_image
 
 
     def detect_player(self):
@@ -258,7 +304,7 @@ class Turret(pg.sprite.Sprite):
         self.rect = self.image.get_rect(midtop=(self.pos[0], self.pos[1] - 30))
         
     def draw(self, screen, camera):
-        screen.blit(self.mount_image, (self.mount_rect.x + camera.x, self.mount_rect.y + camera.y))
+        screen.blit(self.mount_image_copy, (self.mount_rect.x + camera.x, self.mount_rect.y + camera.y))
 
 
 
@@ -315,3 +361,46 @@ class ElectricField(pg.sprite.Sprite):
                 self.active = True
                 self.active_timer = pg.time.get_ticks()
 
+
+
+class Boss(pg.sprite.Sprite):
+
+    def __init__(self, game, tile_meta, *groups):
+        super().__init__(*groups)
+        self.game = game
+        self.pos = [tile_meta["px"][0] * TILE_SCALE, tile_meta["px"][1] * TILE_SCALE]
+        self.boss_images = self.load_images()
+        self.image = self.boss_images[0]
+        self.rect = self.image.get_rect(topleft=self.pos)
+        self.image_index = 0
+        self.exploding = False
+        self.explode_timer = pg.time.get_ticks()
+
+    def update(self):
+
+        if self.exploding:
+            if pg.time.get_ticks() - self.explode_timer > 2000:
+                self.kill()
+            else:
+                self.explode()
+        else:
+            if self.image_index > len(self.boss_images) - 1:
+                self.explode_timer = pg.time.get_ticks()
+                self.exploding = True
+            else:
+                self.image = self.boss_images[self.image_index]
+
+    def load_images(self):
+        boss_path = "assets/images/boss/"
+        boss_images = []
+        for img in os.listdir(boss_path):
+            boss_images.append(
+                read_image(boss_path + img, w=6*TILE_SIZE*TILE_SCALE, h=6*TILE_SIZE*TILE_SCALE, create_surface=True)
+            )
+        return boss_images
+
+    def explode(self):
+        pos = (self.rect.centerx + random.randint(-100, 100), self.rect.centery + random.randint(-100, 100))
+        radius = random.randint(50, 250)
+        col = (65, 72, 93)
+        Particle(pos, radius/10, radius, col, self.game.camera, self.game.particles, self.game.entities)

@@ -66,7 +66,9 @@ class Player(pg.sprite.Sprite):
             if ef.active:
                 if pg.sprite.collide_rect(self, ef):
                     self.vel.x = 0
+                    self.rect.center = ef.rect.center
                     self.shield_available = False
+                    return
 
         # Gravity logic
         if not self.grounded:

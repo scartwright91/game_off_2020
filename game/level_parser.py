@@ -4,7 +4,7 @@ import pygame as pg
 import os
 from .settings import *
 from .utils import read_image
-from .enemies import Droid, Turret, ElectricField
+from .enemies import Droid, Turret, ElectricField, Boss
 
 
 def find_player_pos(level):
@@ -75,6 +75,8 @@ def create_level(game, level):
                     MovingTile(entity, game.platforms, game.camera, game.entities)
                 if entity["__identifier"] == "ElectricField":
                     ElectricField(entity, game.sound_effects["electric"], game.electric_fields, game.camera, game.entities)
+                if entity["__identifier"] == "Boss":
+                    Boss(game, entity, game.bosses, game.camera, game.entities)
 
 
 

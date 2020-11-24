@@ -2,17 +2,19 @@
 import pygame as pg
 
 
+
 class Particle(pg.sprite.Sprite):
 
-    def __init__(self, pos, radius_limit, *groups):
+    def __init__(self, pos, radius_growth, radius_limit, colour, *groups):
         super().__init__(*groups)
         self.radius = 1
-        self.colour = (65, 72, 93)
+        self.colour = colour
         self.pos = pos
         self.radius_limit = radius_limit
+        self.radius_growth = radius_growth
 
     def update(self):
-        self.radius += 10
+        self.radius += self.radius_growth
         if self.radius > self.radius_limit:
             self.kill()
 

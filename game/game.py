@@ -63,13 +63,14 @@ class Game:
         self.particles = pg.sprite.Group()
         self.platforms = pg.sprite.Group()
         self.enemies = pg.sprite.Group()
+        self.bosses = pg.sprite.Group()
         self.electric_fields = pg.sprite.Group()
         self.projectiles = pg.sprite.Group()
         self.foreground = pg.sprite.Group()
         self.background = pg.sprite.Group()
 
         # Create player, camera and level
-        self.level = 3
+        self.level = 5
         pos = find_player_pos(self.level)
         self.world_size = calculate_world_size(self.level)
         self.player = Player(pos, self)
@@ -100,11 +101,14 @@ class Game:
 
     def update(self):
 
+        if self.player.rect.y > self.camera.world_size[1]:
+            self.playing = False
+
         self.camera.update(self.level)
         self.particles.update()
 
-        if not self.player.alive:
-            self.playing = False
+        # if not self.player.alive:
+        #     self.playing = False
 
         # Create new level if player touches endpoint
         for endpoint in self.endpoints:
@@ -126,6 +130,7 @@ class Game:
         # sprites
         self.camera.draw(self.screen, self.background)
         self.camera.draw(self.screen, self.enemies)
+        self.camera.draw(self.screen, self.bosses)
         for particle in self.particles:
             particle.draw(self.screen, self.camera.cam)
         self.camera.draw(self.screen, self.electric_fields)
