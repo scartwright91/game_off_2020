@@ -20,19 +20,25 @@ def main():
 
     start_menu = StartMenu(screen, clock)
     game_menu = GameMenu(screen, clock)
-    end_game_menu = EndGameMenu(screen, clock)
-    game = Game(screen, clock)
 
     while running:
+
+        start_menu = StartMenu(screen, clock)
+        start_timer = pg.time.get_ticks()
+        game_menu = GameMenu(screen, clock)
+        game = Game(screen, clock)
+
         playing = start_menu.run()
         while playing:
-            complete = game.run()
+            complete, lost = game.run()
             if complete:
+                end_game_menu = EndGameMenu(screen, clock, start_timer)
                 end_game_menu.run()
                 running = False
+            elif lost:
+                playing = False
             else:
                 playing = game_menu.run()
-
 
 if __name__ == '__main__':
     main()

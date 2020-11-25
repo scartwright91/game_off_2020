@@ -93,10 +93,12 @@ class GameMenu:
 
 
 class EndGameMenu:
-    def __init__(self, screen, clock):
+    def __init__(self, screen, clock, start_timer):
         self.screen = screen
         self.clock = clock
         self.screen_size = self.screen.get_size()
+        end_timer = pg.time.get_ticks()
+        self.completion_timer = (end_timer - start_timer)/1000
         self.playing = True
 
     def run(self):
@@ -122,7 +124,7 @@ class EndGameMenu:
         self.screen.fill((0, 0, 0))
 
         draw_text(self.screen,
-                  'Congratulations you won!',
+                  'Completed in {} seconds'.format(round(self.completion_timer, 2)),
                   color=(255, 255, 255),
                   x=self.screen_size[0]*0.5,
                   y=self.screen_size[1]*0.3,

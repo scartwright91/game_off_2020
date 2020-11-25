@@ -81,6 +81,7 @@ class Game:
         # main game loop
         self.playing = True
         self.game_complete = False
+        self.game_lost = False
 
         while self.playing:
             self.clock.tick(60)
@@ -88,7 +89,7 @@ class Game:
             self.update()
             self.draw()
 
-        return self.game_complete
+        return self.game_complete, self.game_lost
 
     def events(self):
         for event in pg.event.get():
@@ -101,14 +102,21 @@ class Game:
 
     def update(self):
 
+        # endg game logic
+        if self.level == 5 and len(self.bosses) == 0:
+            self.game_complete = True
+            self.playing = False
+
         if self.player.rect.y > self.camera.world_size[1]:
+            self.game_lost = True
             self.playing = False
 
         self.camera.update(self.level)
         self.particles.update()
 
-        # if not self.player.alive:
-        #     self.playing = False
+        if not self.player.alive:
+            self.game_lost = True
+            self.playing = False
 
         # Create new level if player touches endpoint
         for endpoint in self.endpoints:

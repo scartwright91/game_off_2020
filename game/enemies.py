@@ -403,4 +403,5 @@ class Boss(pg.sprite.Sprite):
         pos = (self.rect.centerx + random.randint(-100, 100), self.rect.centery + random.randint(-100, 100))
         radius = random.randint(50, 250)
         col = (65, 72, 93)
+        self.game.sound_effects["explosion"].play()
         Particle(pos, radius/10, radius, col, self.game.camera, self.game.particles, self.game.entities)
